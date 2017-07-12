@@ -61,7 +61,7 @@ def main(args):
         images = os.listdir(os.path.join('.', args.inputFolder))
         images = [os.path.join(args.inputFolder, img) for img in images]
         if len(images) < 1:
-            print "Error: no images found in", args.inputFolder
+            print("Error: no images found in", args.inputFolder)
             sys.exit()        
         if args.name is not None:
             images = [x for x in images if args.name in x]
@@ -102,7 +102,7 @@ def main(args):
                                     fy=scale, interpolation=cv.INTER_CUBIC)
             imageToTest_padded, pad = util.padRightDownCorner(
                 imageToTest, model['stride'], model['padValue'])
-            print imageToTest_padded.shape
+            print("imageToTest_padded.shape", imageToTest_padded.shape)
 
             net.blobs['data'].reshape(
                 *(1, 3, imageToTest_padded.shape[0], imageToTest_padded.shape[1]))
@@ -115,7 +115,7 @@ def main(args):
                   (m, 1000 * (time.time() - start_time)))
 
             # extract outputs, resize, and remove padding
-            heatmap = np.transpose(np.squeeze(net.blobs[output_blobs.keys()[
+            heatmap = np.transpose(np.squeeze(net.blobs[list(output_blobs.keys())[
                                    1]].data), (1, 2, 0))  # output 1 is heatmaps
             heatmap = cv.resize(heatmap, (0, 0), fx=model['stride'], fy=model[
                                 'stride'], interpolation=cv.INTER_CUBIC)
@@ -124,7 +124,7 @@ def main(args):
             heatmap = cv.resize(heatmap, (oriImg.shape[1], oriImg.shape[
                                 0]), interpolation=cv.INTER_CUBIC)
 
-            paf = np.transpose(np.squeeze(net.blobs[output_blobs.keys()[
+            paf = np.transpose(np.squeeze(net.blobs[list(output_blobs.keys())[
                                0]].data), (1, 2, 0))  # output 0 is PAFs
             paf = cv.resize(paf, (0, 0), fx=model['stride'], fy=model[
                             'stride'], interpolation=cv.INTER_CUBIC)
@@ -133,11 +133,18 @@ def main(args):
             paf = cv.resize(paf, (oriImg.shape[1], oriImg.shape[
                             0]), interpolation=cv.INTER_CUBIC)
 
+            # ValueError: operands could not be broadcast together with shapes
+            if heatmap_avg.shape[2] < heatmap.shape[2]:
+                print("heatmap_avg.shape", heatmap_avg.shape)
+                print("heatmap.shape", heatmap.shape)
+                print("paf_avg.shape", paf_avg.shape)
+                print("paf.shape", paf.shape)
+
             heatmap_avg = heatmap_avg + heatmap / len(multiplier)
             paf_avg = paf_avg + paf / len(multiplier)
 
         import scipy
-        print heatmap_avg.shape
+        print("heatmap_avg.shape", heatmap_avg.shape)
 
         # plt.imshow(heatmap_avg[:,:,2])
         from scipy.ndimage.filters import gaussian_filter
@@ -161,8 +168,8 @@ def main(args):
 
             peaks_binary = np.logical_and.reduce(
                 (map >= map_left, map >= map_right, map >= map_up, map >= map_down, map > param['thre1']))
-            peaks = zip(np.nonzero(peaks_binary)[1], np.nonzero(
-                peaks_binary)[0])  # note reverse
+            peaks = list(zip(np.nonzero(peaks_binary)[1], np.nonzero(
+                peaks_binary)[0]))  # note reverse
             peaks_with_score = [x + (map_ori[x[1], x[0]],) for x in peaks]
             id = range(peak_counter, peak_counter + len(peaks))
             peaks_with_score_and_id = [peaks_with_score[
@@ -202,8 +209,8 @@ def main(args):
                         norm = math.sqrt(vec[0] * vec[0] + vec[1] * vec[1])
                         vec = np.divide(vec, norm)
 
-                        startend = zip(np.linspace(candA[i][0], candB[j][0], num=mid_num),
-                                       np.linspace(candA[i][1], candB[j][1], num=mid_num))
+                        startend = list(zip(np.linspace(candA[i][0], candB[j][0], num=mid_num),
+                                       np.linspace(candA[i][1], candB[j][1], num=mid_num)))
 
                         vec_x = np.array([score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 0]
                                           for I in range(len(startend))])
@@ -216,7 +223,7 @@ def main(args):
                             score_with_dist_prior = sum(
                                 score_midpts) / len(score_midpts) + min(0.5 * oriImg.shape[0] / norm - 1, 0)
                         except ZeroDivisionError:
-                            print "Zero Division Error Encountered"
+                            print("Zero Division Error Encountered")
                             score_with_dist_prior = 0
                         criterion1 = len(np.nonzero(score_midpts > param['thre2'])[
                                          0]) > 0.8 * len(score_midpts)
@@ -271,7 +278,7 @@ def main(args):
                                 j][-2] += candidate[partBs[i].astype(int), 2] + connection_all[k][i][2]
                     elif found == 2:  # if found 2 and disjoint, merge them
                         j1, j2 = subset_idx
-                        print "found = 2"
+                        print("found = 2")
                         membership = ((subset[j1] >= 0).astype(
                             int) + (subset[j2] >= 0).astype(int))[:-2]
                         if len(np.nonzero(membership == 2)[0]) == 0:  # merge
@@ -339,7 +346,7 @@ def main(args):
         outputPath = '{}{}{}.png'.format(args.inputFolder if args.inputFolder else '', args.outputFile,
                                      '_' + str(currentFrame))
         cv.imwrite(outputPath, canvas)
-        print "saved frame to", outputPath
+        print("saved frame to", outputPath)
         currentFrame += 1
 
 
